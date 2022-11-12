@@ -19,8 +19,8 @@ const comercioSchema = joi.object({
     facebookURL: joi.string().allow(null, ''),
     URL: joi.string().allow(null, ''),
     instagramURL: joi.string().allow(null, ''),
-    productosDiabeticos: joi.bool(),
-    productosVeganos: joi.bool(),
+    productosDiabeticos: joi.bool().default(false),
+    productosVeganos: joi.bool().default(false),
     ratingPrecios: joi.number(),
     estrellas: joi.number(),
     telefono: joi.string().required(),
@@ -130,7 +130,9 @@ AS distance FROM Comercio HAVING distance <= ${radKm} ORDER BY distance ASC
     }
 
     comercios.forEach(comercio => {
-        comercio.categorias = JSON.parse(comercio.categorias)
+        comercio.categorias = JSON.parse(comercio.categorias);
+        comercio.productosDiabeticos = comercio.productosDiabeticos as boolean;
+        comercio.productosVeganos = comercio.productosVeganos as boolean;
     });
 
     res.status(200).json(comercios);
