@@ -27,17 +27,18 @@ model Comercio {
     longitud   Float
     horario    String
     telefono   String
+    imagen     String
 
     // Redes
     facebookURL  String
     instagramURL String
-    twitterURL   String
+    URL          String
 
-    productos             Producto[]
-    estrellas             Int
-    ratingPrecios         Int
-    productosDiabeticos   Boolean
-    productosVegetarianos Boolean
+    productos           Producto[]
+    estrellas           Int
+    ratingPrecios       Int
+    productosDiabeticos Boolean
+    productosVeganos    Boolean
 }
 
 enum CategoriaProducto {

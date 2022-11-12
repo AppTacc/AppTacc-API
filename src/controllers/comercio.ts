@@ -17,10 +17,10 @@ const comercioSchema = joi.object({
     longitud: joi.number().required(),
     horario: joi.string().required(),
     facebookURL: joi.string().allow(null, ''),
-    twitterURL: joi.string().allow(null, ''),
+    URL: joi.string().allow(null, ''),
     instagramURL: joi.string().allow(null, ''),
     productosDiabeticos: joi.boolean(),
-    productosVegetarianos: joi.boolean(),
+    productosVeganos: joi.boolean(),
     ratingPrecios: joi.number(),
     estrellas: joi.number(),
     telefono: joi.string().required()
