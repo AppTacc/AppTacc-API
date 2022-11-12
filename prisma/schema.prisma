@@ -1,0 +1,84 @@
+generator client {
+    provider        = "prisma-client-js"
+    previewFeatures = ["referentialIntegrity"]
+}
+
+datasource db {
+    provider             = "mysql"
+    url                  = env("DATABASE_URL")
+    shadowDatabaseUrl    = env("SHADOW_DATABASE_URL")
+    referentialIntegrity = "prisma"
+}
+
+enum Localidad {
+    MarDelPlata
+    Chapadmalal
+    Batan
+}
+
+model Comercio {
+    id         Int                 @id @default(autoincrement())
+    nombre     String
+    categorias String // TODO: Hacer que esto sea un array de enum
+    // la ubicacion no es una entidad aparte porque no hace falta
+    direccion  String
+    localidad  Localidad // Cómo definimos las localidades
+    latitud    Float
+    longitud   Float
+    horario String
+
+    // Redes
+    facebookURL  String
+    instagramURL String
+    twitterURL   String
+
+    productos             Producto[]
+    estrellas             Int
+    ratingPrecios         Int
+    productosDiabeticos   Boolean
+    productosVegetarianos Boolean
+}
+
+enum CategoriaProducto {
+    Frescos
+    Panificados
+    Elaborados
+    Envasados
+    Bebidas
+    Postres
+    Snacks
+}
+
+model Producto {
+    id          Int               @id @default(autoincrement())
+    nombre      String
+    descripcion String
+    categoria   CategoriaProducto
+    precio      Int // en centavos
+    rating      Int
+    imagen      String
+
+    comercioId Int
+    comercio   Comercio @relation(fields: [comercioId], references: [id])
+}
+
+enum DiaSemana {
+    Lunes
+    Martes
+    Miercoles
+    Jueves
+    Viernes
+    Sabado
+    Domingo
+}
+
+// Este modelo se va a usar mas adelante, ahora se unsa un atributo string.
+//model Horario {
+//    id              Int       @id @default(autoincrement())
+//    horarioApertura Int
+//    horarioCierre   Int
+//    diaSemana       DiaSemana
+//    abre            Boolean
+//    comercioId      Int
+//    comercio        Comercio  @relation(fields: [comercioId], references: [id])
+//}
