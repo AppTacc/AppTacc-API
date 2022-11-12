@@ -11,7 +11,7 @@ const app = express();
 app.use(express.json());
 
 app.use("/comercios", comerciosRouter);
-app.use("/categorias", categoriasRouter)
+app.use("/categorias", categoriasRouter);
 app.use("/dummy", dummyRouter);
 
 const port = process.env.PORT || 3000;
