@@ -231,4 +231,19 @@ router.get("/:id", async (req, res) => {
     res.status(200).json(comercio);
 });
 
+router.delete("/:id", async (req, res) => {
+    const id = Number(req.params.id);
+    if (isNaN(id)) {
+        return res.status(400).json({ error: "id invalido" });
+    }
+
+    const comercioEliminado = await prisma.comercio.delete({
+        where: {
+            id
+        }
+    });
+
+    res.status(202).json(comercioEliminado);
+})
+
 export default router;
