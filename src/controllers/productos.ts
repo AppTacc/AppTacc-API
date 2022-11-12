@@ -1,4 +1,9 @@
 import router from "./comercio";
+import joi from "joi";
+import { getEnumValues } from "../util";
+import { CategoriaProducto, PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient();
 
 const productoSchema = joi.object({
     nombre: joi.string().required(),

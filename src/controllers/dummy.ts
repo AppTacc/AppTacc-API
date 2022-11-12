@@ -1,6 +1,5 @@
 import { CategoriaProducto, Comercio } from "@prisma/client";
 import { Router } from "express";
-import { CategoriaComercio } from "../types";
 import { getEnumValues } from "../util";
 
 const router = Router();
