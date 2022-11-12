@@ -33,7 +33,7 @@ const productoSchema = joi.object({
     precio: joi.number().required(),
     categoria: joi.valid(...getEnumValues(CategoriaProducto)).required(),
     rating: joi.number().default(5),
-    imagen: joi.string().default("")
+    imagen: joi.string().default("https://res.cloudinary.com/deadalo3r/image/upload/v1668248337/ic_launcher_thbnxq.png")
 });
 
 const router = Router();
