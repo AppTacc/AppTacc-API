@@ -158,7 +158,6 @@ router.post("/:id/productos", async (req, res) => {
         where: {
             id: id
         }
-
     });
 
     if(!comercio) {
@@ -166,6 +165,8 @@ router.post("/:id/productos", async (req, res) => {
     }
 
     const body = productoSchema.validate(req.body);
+
+    console.log(body);
 
     if(body.error) {
         res.status(400).json({ error: body.error.message });
