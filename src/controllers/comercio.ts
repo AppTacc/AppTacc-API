@@ -22,7 +22,8 @@ const comercioSchema = joi.object({
     productosDiabeticos: joi.boolean(),
     productosVegetarianos: joi.boolean(),
     ratingPrecios: joi.number(),
-    estrellas: joi.number()
+    estrellas: joi.number(),
+    telefono: joi.string().required()
 });
 
 const router = Router();

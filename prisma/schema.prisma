@@ -17,7 +17,7 @@ enum Localidad {
 }
 
 model Comercio {
-    id         Int                 @id @default(autoincrement())
+    id         Int       @id @default(autoincrement())
     nombre     String
     categorias String // TODO: Hacer que esto sea un array de enum
     // la ubicacion no es una entidad aparte porque no hace falta
@@ -25,7 +25,8 @@ model Comercio {
     localidad  Localidad // Cómo definimos las localidades
     latitud    Float
     longitud   Float
-    horario String
+    horario    String
+    telefono   String
 
     // Redes
     facebookURL  String
