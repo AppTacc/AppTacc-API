@@ -44,7 +44,7 @@ router.post("/", async (req, res) => {
         res.status(400).json({ error: body.error });
     } else {
         const comercio = await prisma.comercio.create({
-            data: { ...body.value, categorias: JSON.stringify(body.value.categorias), validado: false }
+            data: { ...body.value, categorias: JSON.stringify(body.value.categorias) }
         });
         res.status(201).json(comercio);
     }
