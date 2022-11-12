@@ -138,36 +138,6 @@ AS distance FROM Comercio HAVING distance <= ${radKm} ORDER BY distance ASC
     res.status(200).json(comercios);
 });
 
-router.get("/:id", async (req, res) => {
-    const id = Number(req.params.id);
-
-    const comercio = await prisma.comercio.findUnique({
-        where: {
-            id
-        },
-        select: {
-            productos: true
-        }
-    });
-
-    if(!comercio) {
-        return res.status(404).json({ error: "Comercio no encontrado" });
-    }
-
-    comercio.categorias = JSON.parse(comercio.categorias);
-
-    res.status(200).json(comercio);
-});
-
-const productoSchema = joi.object({
-    nombre: joi.string().required(),
-    descripcion: joi.string().required(),
-    precio: joi.number().required(),
-    categoria: joi.valid(...getEnumValues(CategoriaProducto)).required(),
-    rating: joi.number(),
-    imagen: joi.string()
-});
-
 router.post("/:id/productos", async (req, res) => {
     const id = Number(req.params.id);
 
@@ -205,5 +175,37 @@ router.post("/:id/productos", async (req, res) => {
 
     res.status(201).json(producto);
 });
+
+router.get("/:id", async (req, res) => {
+    const id = Number(req.params.id);
+
+    const comercio = await prisma.comercio.findUnique({
+        where: {
+            id
+        },
+        include: {
+            productos: true
+        }
+    });
+
+    if(!comercio) {
+        return res.status(404).json({ error: "Comercio no encontrado" });
+    }
+
+    comercio.categorias = JSON.parse(comercio.categorias);
+
+    res.status(200).json(comercio);
+});
+
+const productoSchema = joi.object({
+    nombre: joi.string().required(),
+    descripcion: joi.string().required(),
+    precio: joi.number().required(),
+    categoria: joi.valid(...getEnumValues(CategoriaProducto)).required(),
+    rating: joi.number(),
+    imagen: joi.string()
+});
+
+
 
 export default router;
