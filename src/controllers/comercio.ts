@@ -74,7 +74,8 @@ AS distance FROM Comercio HAVING distance <= ${radKm} AND validado = true ORDER 
 
     let comercios: Comercio[] = [];
 
-    const { filtradoPor, filtro, ordenar } = req.query;
+    let { filtradoPor, ordenar, filtro } = req.query;
+    filtro = decodeURI(filtro as string);
 
     if (filtradoPor === undefined) {
         comercios = [...comerciosCercanos];
