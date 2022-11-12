@@ -49,7 +49,7 @@ router.get("/", async (req, res) => {
         return res.status(400).json({ error: "Latitud o longitud invalidos." });
 
     const comerciosCercanos = await prisma.$queryRaw<Comercio[]>`
-        SELECT id, 
+        SELECT *, 
 ( 6371 * 
     ACOS( 
         COS( RADIANS( latitud ) ) * 
