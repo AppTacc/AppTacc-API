@@ -1,7 +1,9 @@
-import router from "./comercio";
+import { Router } from "express";
 import joi from "joi";
 import { getEnumValues } from "../util";
 import { CategoriaProducto, PrismaClient } from "@prisma/client";
+
+const router = Router();
 
 const prisma = new PrismaClient();
 
@@ -14,45 +16,7 @@ const productoSchema = joi.object({
     imagen: joi.string()
 });
 
-router.post("/:id/productos", async (req, res) => {
-    const id = Number(req.params.id);
-
-    if (isNaN(id)) {
-        return res.status(400).json({ error: "id invalido" });
-    }
-
-    const comercio = await prisma.comercio.findUnique({
-        where: {
-            id: id
-        }
-
-    });
-
-    if (!comercio) {
-        return res.status(404).json({ error: "Comercio no encontrado" });
-    }
-
-    const body = productoSchema.validate(req.body);
-
-    if (body.error) {
-        res.status(400).json({ error: body.error.message });
-    }
-
-    const producto = await prisma.producto.create({
-        data: {
-            ...body.value,
-            comercio: {
-                connect: {
-                    id: id
-                }
-            }
-        },
-    });
-
-    res.status(201).json(producto);
-});
-
-router.post("/:id", async (req, res) => {
+router.post("/:id/validar", async (req, res) => {
     const id = Number(req.params.id);
     if (isNaN(id)) {
         return res.status(400).json({ error: "id invalido" });
@@ -84,25 +48,4 @@ router.get("/sinvalidar", async (req, res) => {
     res.status(200).json(comercios.filter(comercio => comercio.productos && comercio.productos.length > 0));
 });
 
-router.get("/:id/productos", async (req, res) => {
-    const id = Number(req.params.id);
-
-    if (isNaN(id)) {
-        return res.status(400).json({ error: "id invalido" });
-    }
-
-    const comercio = await prisma.comercio.findUnique({
-        where: {
-            id: id
-        },
-        select: {
-            productos: true
-        }
-    });
-
-    if (!comercio) {
-        return res.status(404).json({ error: "Comercio no encontrado" });
-    }
-
-    res.status(200).json(comercio.productos);
-});
+export default router;
