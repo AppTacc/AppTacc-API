@@ -27,7 +27,7 @@ model Comercio {
     longitud   Float
     horario    String
     telefono   String
-    imagen     String
+    imagenURL  String
 
     // Redes
     facebookURL  String

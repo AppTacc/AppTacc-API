@@ -23,7 +23,8 @@ const comercioSchema = joi.object({
     productosVeganos: joi.boolean(),
     ratingPrecios: joi.number(),
     estrellas: joi.number(),
-    telefono: joi.string().required()
+    telefono: joi.string().required(),
+    imagenURL: joi.string().allow(null, '')
 });
 
 const router = Router();
