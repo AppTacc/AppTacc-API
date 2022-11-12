@@ -60,6 +60,7 @@ model Producto {
     precio      Int // en centavos
     rating      Int
     imagen      String
+    validado    Boolean @default(false)
 
     comercioId Int
     comercio   Comercio @relation(fields: [comercioId], references: [id])
