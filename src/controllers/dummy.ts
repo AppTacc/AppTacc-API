@@ -22,7 +22,8 @@ router.get("/comercio", (req, res) => {
         ratingPrecios: 3,
         productosDiabeticos: true,
         productosVeganos: true,
-        id: 2
+        id: 2,
+        telefono: "0223 530-0329"
     };
     res.status(200).json(comercio);
 });
@@ -45,6 +46,8 @@ router.get("/comercios", (req, res) => {
         ratingPrecios: 3,
         productosDiabeticos: true,
         productosVeganos: true,
+        id: 2,
+        telefono: "0223 530-0329"
     };
     const comercios = [
         comercio,
