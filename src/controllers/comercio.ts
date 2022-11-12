@@ -32,8 +32,8 @@ const productoSchema = joi.object({
     descripcion: joi.string().required(),
     precio: joi.number().required(),
     categoria: joi.valid(...getEnumValues(CategoriaProducto)).required(),
-    rating: joi.number(),
-    imagen: joi.string()
+    rating: joi.number().default(5),
+    imagen: joi.string().default("")
 });
 
 const router = Router();
@@ -165,8 +165,6 @@ router.post("/:id/productos", async (req, res) => {
     }
 
     const body = productoSchema.validate(req.body);
-
-    console.log(body);
 
     if(body.error) {
         res.status(400).json({ error: body.error.message });
