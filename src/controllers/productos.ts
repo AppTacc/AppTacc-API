@@ -36,6 +36,9 @@ router.post("/:id/validar", async (req, res) => {
 
 router.get("/sinvalidar", async (req, res) => {
     const comercios = await prisma.comercio.findMany({
+        where: {
+            validado: true
+        },
         include: {
             productos: {
                 where: {
