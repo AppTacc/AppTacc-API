@@ -144,6 +144,9 @@ router.get("/:id", async (req, res) => {
     const comercio = await prisma.comercio.findUnique({
         where: {
             id
+        },
+        select: {
+            productos: true
         }
     });
 
