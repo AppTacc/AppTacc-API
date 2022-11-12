@@ -2,6 +2,7 @@ import express from "express";
 import dotenv from "dotenv";
 
 import comerciosRouter from "./controllers/comercio";
+import categoriasRouter from "./controllers/categorias";
 import dummyRouter from "./controllers/dummy";
 
 dotenv.config();
@@ -10,6 +11,7 @@ const app = express();
 app.use(express.json());
 
 app.use("/comercios", comerciosRouter);
+app.use("/categorias", categoriasRouter)
 app.use("/dummy", dummyRouter);
 
 const port = process.env.PORT || 3000;
