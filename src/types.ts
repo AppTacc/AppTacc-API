@@ -1,6 +1,6 @@
 export enum CategoriaComercio {
-    Restaurante,
-    Bar,
-    Cafe,
-    Takeaway
+    Restaurante = "Restaurante",
+    Bar = "Bar",
+    Cafe = "Cafe",
+    ParaLlevar = "ParaLlevar"
 };
