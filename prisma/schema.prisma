@@ -39,6 +39,7 @@ model Comercio {
     ratingPrecios       Int
     productosDiabeticos Boolean
     productosVeganos    Boolean
+    validado            Boolean
 }
 
 enum CategoriaProducto {

@@ -44,7 +44,7 @@ router.post("/", async (req, res) => {
         res.status(400).json({ error: body.error });
     } else {
         const comercio = await prisma.comercio.create({
-            data: { ...body.value, categorias: JSON.stringify(body.value.categorias) }
+            data: { ...body.value, categorias: JSON.stringify(body.value.categorias), validado: false }
         });
         res.status(201).json(comercio);
     }
@@ -69,7 +69,7 @@ router.get("/", async (req, res) => {
         SIN( RADIANS( ${lat}) ) 
     ) 
 ) 
-AS distance FROM Comercio HAVING distance <= ${radKm} ORDER BY distance ASC
+AS distance FROM Comercio HAVING distance <= ${radKm} AND validado = true ORDER BY distance ASC
     `;
 
     let comercios: Comercio[] = [];
@@ -145,6 +145,31 @@ AS distance FROM Comercio HAVING distance <= ${radKm} ORDER BY distance ASC
     });
 
     res.status(200).json(comercios);
+});
+
+router.get("/sinvalidar", async (req, res) => {
+    const comercios = await prisma.comercio.findMany({
+        where: {
+            validado: false
+        }
+    });
+
+    res.status(200).json(comercios);
+});
+
+router.post("/:id/validar", async (req, res) => {
+    const id = Number(req.params.id);
+    if (isNaN(id))
+        return res.status(400).json({ error: "id invalido" });
+    const comercio = await prisma.comercio.update({
+        where: {
+            id
+        },
+        data: {
+            validado: true
+        }
+    });
+    res.status(200).json(comercio);
 });
 
 router.post("/:id/productos", async (req, res) => {
