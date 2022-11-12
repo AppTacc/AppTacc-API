@@ -22,6 +22,7 @@ router.get("/comercio", (req, res) => {
         ratingPrecios: 3,
         productosDiabeticos: true,
         productosVeganos: true,
+        id: 2
     };
     res.status(200).json(comercio);
 });
