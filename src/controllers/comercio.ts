@@ -131,8 +131,8 @@ AS distance FROM Comercio HAVING distance <= ${radKm} ORDER BY distance ASC
 
     comercios.forEach(comercio => {
         comercio.categorias = JSON.parse(comercio.categorias);
-        comercio.productosDiabeticos = comercio.productosDiabeticos as boolean;
-        comercio.productosVeganos = comercio.productosVeganos as boolean;
+        comercio.productosDiabeticos = !!comercio.productosDiabeticos;
+        comercio.productosVeganos = !!comercio.productosVeganos;
     });
 
     res.status(200).json(comercios);

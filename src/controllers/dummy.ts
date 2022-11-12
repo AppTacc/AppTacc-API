@@ -55,18 +55,6 @@ router.get("/comercios", (req, res) => {
         comercio
     ]
     res.status(200).json(comercios);
-})
-
-router.get("/categorias/comercio", (req, res) => {
-    res.status(200).json([
-        "Restaurante",
-        "Bar",
-        "Cafe",
-        "Takeaway"]);
-});
-
-router.get("/categorias/producto", (req, res) => {
-    res.status(200).json([...Object.values(getEnumValues(CategoriaProducto))]);
 });
 
 export default router;
