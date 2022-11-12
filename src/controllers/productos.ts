@@ -51,4 +51,19 @@ router.get("/sinvalidar", async (req, res) => {
     res.status(200).json(comercios.filter(comercio => comercio.productos && comercio.productos.length > 0));
 });
 
+router.delete("/:id", async (req, res) => {
+    const id = Number(req.params.id);
+    if (isNaN(id)) {
+        return res.status(400).json({ error: "id invalido" }); 
+    }
+
+    const productoEliminado = await prisma.producto.delete({
+        where: {
+            id
+        }
+    });
+
+    res.status(202).json(productoEliminado);
+})
+
 export default router;
