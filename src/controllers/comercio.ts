@@ -129,6 +129,10 @@ AS distance FROM Comercio HAVING distance <= ${radKm} ORDER BY distance ASC
         })
     }
 
+    comercios.forEach(comercio => {
+        comercio.categorias = JSON.parse(comercio.categorias)
+    })
+
     res.status(200).json(comercios);
 });
 
