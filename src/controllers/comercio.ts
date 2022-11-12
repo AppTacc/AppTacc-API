@@ -27,6 +27,15 @@ const comercioSchema = joi.object({
     imagenURL: joi.string().allow(null, '')
 });
 
+const productoSchema = joi.object({
+    nombre: joi.string().required(),
+    descripcion: joi.string().required(),
+    precio: joi.number().required(),
+    categoria: joi.valid(...getEnumValues(CategoriaProducto)).required(),
+    rating: joi.number(),
+    imagen: joi.string()
+});
+
 const router = Router();
 
 router.post("/", async (req, res) => {
@@ -196,16 +205,5 @@ router.get("/:id", async (req, res) => {
 
     res.status(200).json(comercio);
 });
-
-const productoSchema = joi.object({
-    nombre: joi.string().required(),
-    descripcion: joi.string().required(),
-    precio: joi.number().required(),
-    categoria: joi.valid(...getEnumValues(CategoriaProducto)).required(),
-    rating: joi.number(),
-    imagen: joi.string()
-});
-
-
 
 export default router;
