@@ -29,6 +29,7 @@ router.get("/comercios", (req, res) => {
         nombre: "Sol de Invierno",
         categorias: ["Para llevar"],
         direccion: "25 de Mayo 3891",
+        localidad: "",
         latitud: -37.99046981482626,
         longitud: -57.558342038624005,
         horario: "9:30 - 20:30",
