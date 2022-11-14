@@ -6,13 +6,11 @@ import { getEnumValues } from "../util";
 const router = Router();
 
 router.get("/comercio", (req, res) => {
-    res.status(200).json([
-        ...Object.values(getEnumValues(CategoriaComercio))
-        ]);
+	res.status(200).json(getEnumValues(CategoriaComercio));
 });
 
 router.get("/producto", (req, res) => {
-    res.status(200).json([...Object.values(getEnumValues(CategoriaProducto))]);
+	res.status(200).json(getEnumValues(CategoriaProducto));
 });
 
 export default router;
