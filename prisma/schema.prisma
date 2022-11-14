@@ -19,7 +19,7 @@ enum Localidad {
 model Comercio {
     id         Int       @id @default(autoincrement())
     nombre     String
-    categorias String // TODO: Hacer que esto sea un array de enum
+    categorias String // es un string porque es un array de string serializado como string. Para consultar hacer JSON.parse() 
     // la ubicacion no es una entidad aparte porque no hace falta
     direccion  String
     localidad  Localidad // Cómo definimos las localidades
