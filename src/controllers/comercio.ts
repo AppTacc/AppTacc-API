@@ -242,6 +242,10 @@ router.post("/:id/productos", async (req, res) => {
 router.get("/:id", async (req, res) => {
 	const id = Number(req.params.id);
 
+	if (isNan(id)) {
+		return res.status(400).json({ error: "id invalido" });
+	}
+
 	const comercio = await prisma.comercio.findUnique({
 		where: {
 			id
