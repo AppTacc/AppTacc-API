@@ -71,7 +71,7 @@ router.delete("/:id", async (req, res) => {
 	res.status(202).json(productoEliminado);
 });
 
-router.put("/:id", async (req, res) => {
+router.patch("/:id", async (req, res) => {
 	const id = Number(req.params.id);
 	if (isNaN(id)) {
 		return res.status(400).json({ error: "id invalido" });

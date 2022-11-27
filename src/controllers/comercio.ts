@@ -265,7 +265,7 @@ router.get("/:id", async (req, res) => {
 	res.status(200).json(comercio);
 });
 
-router.put("/:id", async (req, res) => {
+router.patch("/:id", async (req, res) => {
 	const id = Number(req.params.id);
 
 	if (isNaN(id)) {
