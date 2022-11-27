@@ -8,6 +8,7 @@ import {
 } from "@prisma/client";
 import { getEnumValues } from "../util";
 import { CategoriaComercio } from "../types";
+import { PrismaClientValidationError } from "@prisma/client/runtime";
 
 const prisma = new PrismaClient({
 	log: process.env.NODE_ENV == "DEVELOPMENT" ? ["query"] : []
@@ -262,6 +263,42 @@ router.get("/:id", async (req, res) => {
 	comercio.categorias = JSON.parse(comercio.categorias);
 
 	res.status(200).json(comercio);
+});
+
+router.put("/:id", async (req, res) => {
+	const id = Number(req.params.id);
+
+	if (isNaN(id)) {
+		return res.status(400).json({ error: "id invalido" });
+	}
+
+	const comercio = await prisma.comercio.findUnique({
+		where: {
+			id
+		}
+	});
+
+	if (!comercio) {
+		return res.status(404).json({ error: "Comercio no encontrado" });
+	}
+
+	try {
+		const comercioActualizado = await prisma.comercio.update({
+			where: {
+				id
+			},
+			data: req.body
+		});
+
+		return res.status(200).json(comercioActualizado);
+	} catch (err) {
+		if (err instanceof PrismaClientValidationError) {
+			return res.status(400).json({
+				error: "Error en la validacion de los datos"
+			});
+		}
+		return res.status(500).json({ error: "Error interno del servidor" });
+	}
 });
 
 router.delete("/:id", async (req, res) => {
