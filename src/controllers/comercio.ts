@@ -129,6 +129,15 @@ AS distance FROM Comercio HAVING distance <= ${radKm} AND validado = true ORDER 
 			}
 		}
 	} else if (filtradoPor === Filtro.CategoriaComercio) {
+		if (
+			!Object.values(CategoriaComercio).includes(
+				filtro as CategoriaComercio
+			)
+		) {
+			return res.status(400).json({
+				error: "Categoria de comercio invalida."
+			});
+		}
 		for (const comercio of comerciosCercanos) {
 			const categorias: string[] = JSON.parse(comercio.categorias);
 			if (categorias.includes(filtro as string)) {
@@ -151,8 +160,12 @@ AS distance FROM Comercio HAVING distance <= ${radKm} AND validado = true ORDER 
 			}
 		}
 	} else if (filtradoPor === Filtro.NombreComercio) {
-		for (const comercio of comercios) {
-			if (comercio.nombre === filtro) {
+		for (const comercio of comerciosCercanos) {
+			if (
+				comercio.nombre
+					.toLowerCase()
+					.includes(filtro.toLowerCase() as string)
+			) {
 				comercios.push(comercio);
 			}
 		}
