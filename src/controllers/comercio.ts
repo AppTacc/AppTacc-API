@@ -78,7 +78,7 @@ enum Orden {
 }
 
 router.get("/", async (req, res) => {
-	const radKm = 20;
+	const radKm = Number(req.query.radio) || 30;
 	const lat = Number(req.query.lat);
 	const long = Number(req.query.long);
 	if (isNaN(lat) || isNaN(long))
@@ -280,6 +280,17 @@ router.patch("/:id", async (req, res) => {
 
 	if (!comercio) {
 		return res.status(404).json({ error: "Comercio no encontrado" });
+	}
+
+	const nuevaCategoria = req.body.categorias as CategoriaComercio;
+
+	if (nuevaCategoria) {
+		if (!Object.values(CategoriaComercio).includes(nuevaCategoria)) {
+			return res.status(400).json({ error: "Categoria invalida" });
+		}
+		const categorias = JSON.parse(comercio.categorias);
+		categorias.push(nuevaCategoria);
+		req.body.categorias = JSON.stringify(categorias);
 	}
 
 	try {
