@@ -1,12 +1,11 @@
 import { z } from "zod";
-import { DiaSemana, Localidad } from "@prisma/client";
-import { CategoriaComercio } from "../types";
+import { DiaSemana } from "@prisma/client";
 
 export default z.object({
 	nombre: z.string(),
-	categorias: z.array(z.nativeEnum(CategoriaComercio)),
 	direccion: z.string(),
-	localidad: z.nativeEnum(Localidad),
+	categorias: z.array(z.number()),
+	localidad: z.number(),
 	latitud: z.number(),
 	longitud: z.number(),
 	horario: z.string(),

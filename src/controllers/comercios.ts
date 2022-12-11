@@ -16,13 +16,32 @@ router.post("/", async (req, res) => {
 	}
 
 	const data = body.data;
-	const { horarios, ...rest } = data;
+	const { horarios, categorias, localidad, ...rest } = data;
 	const comercio = await prisma.comercio.create({
 		data: {
 			...rest,
-			categorias: JSON.stringify(data.categorias)
+			localidad: {
+				connect: {
+					id: localidad
+				}
+			}
 		}
 	});
+
+	if (categorias) {
+		await prisma.comercio.update({
+			where: {
+				id: comercio.id
+			},
+			data: {
+				categorias: {
+					connect: categorias.map(categoria => ({
+						id: categoria
+					}))
+				}
+			}
+		});
+	}
 
 	if (horarios) {
 		horarios.forEach(async horario => {
@@ -73,7 +92,7 @@ router.get("/", async (req, res) => {
         SIN( RADIANS( ${lat}) ) 
     ) 
 ) 
-AS distance FROM Comercio HAVING distance <= ${radKm} AND validado = true ORDER BY distance ASC
+AS distance FROM Comercio HAVING distance <= ${radKm} AND validado = true ORDER BY distance ASC;
     `;
 
 	let comercios: Comercio[] = [];
@@ -106,29 +125,20 @@ AS distance FROM Comercio HAVING distance <= ${radKm} AND validado = true ORDER 
 					}
 				});
 				if (cantProd._count.id > 0) {
-					// Checkear
 					comercios.push(comercio);
 				}
 			}
 		}
 	} else if (filtradoPor === Filtro.CategoriaComercio) {
-		if (
-			!Object.values(CategoriaComercio).includes(
-				filtro as CategoriaComercio
-			)
-		) {
-			return res.status(400).json({
-				error: "Categoria de comercio invalida."
-			});
-		}
-		for (const comercio of comerciosCercanos) {
-			const categorias: string[] = JSON.parse(
-				comercio.categorias as string
-			);
-			if (categorias.includes(filtro as string)) {
-				comercios.push(comercio);
+		comercios = await prisma.comercio.findMany({
+			where: {
+				categorias: {
+					some: {
+						id: Number(filtro)
+					}
+				}
 			}
-		}
+		});
 	} else if (filtradoPor === Filtro.NombreProducto) {
 		for (const comercio of comerciosCercanos) {
 			const cantProd = await prisma.producto.aggregate({
@@ -169,7 +179,6 @@ AS distance FROM Comercio HAVING distance <= ${radKm} AND validado = true ORDER 
 	}
 
 	comercios.forEach(comercio => {
-		comercio.categorias = JSON.parse(comercio.categorias as string);
 		comercio.productosDiabeticos = !!comercio.productosDiabeticos;
 		comercio.productosVeganos = !!comercio.productosVeganos;
 	});

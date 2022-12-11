@@ -2,7 +2,6 @@ import { PrismaClientValidationError } from "@prisma/client/runtime";
 import { Router } from "express";
 import { fromZodError } from "zod-validation-error";
 import { prisma } from "../prisma";
-import { CategoriaComercio } from "../types";
 import productoSchema from "../schemas/producto";
 import horarioSchema from "../schemas/horario";
 
@@ -16,7 +15,7 @@ router.get("/:id", async (req, res) => {
 	}
 
 	const productos = req.query.productos === "true";
-	// const categorias = Boolean(req.query.categorias as string);
+	const categorias = req.query.categorias === "true";
 	const horarios = req.query.horarios === "true";
 
 	const comercio = await prisma.comercio.findUnique({
@@ -25,7 +24,7 @@ router.get("/:id", async (req, res) => {
 		},
 		include: {
 			productos,
-			// categorias,
+			categorias,
 			horarios
 		}
 	});
@@ -34,9 +33,23 @@ router.get("/:id", async (req, res) => {
 		return res.status(404).json({ error: "Comercio no encontrado" });
 	}
 
-	comercio.categorias = JSON.parse(comercio.categorias as string);
-
 	res.status(200).json(comercio);
+});
+
+router.get("/:id/horarios", async (req, res) => {
+	const id = Number(req.params.id);
+
+	if (isNaN(id)) {
+		return res.status(400).json({ error: "id invalido" });
+	}
+
+	const horarios = await prisma.horario.findMany({
+		where: {
+			comercioId: id
+		}
+	});
+
+	res.status(200).json(horarios);
 });
 
 router.post("/:id/horarios", async (req, res) => {
@@ -191,23 +204,24 @@ router.patch("/:id", async (req, res) => {
 		return res.status(404).json({ error: "Comercio no encontrado" });
 	}
 
-	const nuevaCategoria = req.body.categorias as CategoriaComercio;
-
-	if (nuevaCategoria) {
-		if (!Object.values(CategoriaComercio).includes(nuevaCategoria)) {
-			return res.status(400).json({ error: "Categoria invalida" });
-		}
-		const categorias = JSON.parse(comercio.categorias as string);
-		categorias.push(nuevaCategoria);
-		req.body.categorias = JSON.stringify(categorias);
-	}
+	const nuevasCategorias = req.body.categorias as string[];
+	if (nuevasCategorias) delete req.body.categorias;
 
 	try {
 		const comercioActualizado = await prisma.comercio.update({
 			where: {
 				id
 			},
-			data: req.body
+			data: {
+				...(nuevasCategorias
+					? {
+							categorias: nuevasCategorias.map(categoria => {
+								id: categoria;
+							})
+					  }
+					: {}),
+				...req.body
+			}
 		});
 
 		return res.status(200).json(comercioActualizado);

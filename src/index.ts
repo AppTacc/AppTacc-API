@@ -1,6 +1,7 @@
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
+import swaggerUi from "swagger-ui-express";
 
 import comerciosRouter from "./controllers/comercios";
 import comercioRouter from "./controllers/comercio";
@@ -18,7 +19,11 @@ app.use("/comercios", comerciosRouter);
 app.use("/comercios", comercioRouter);
 app.use("/categorias", categoriasRouter);
 app.use("/productos", productosRouter);
+
 app.use("/dummy", dummyRouter);
+
+const swaggerDocument = require("./swagger.json");
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 const port = process.env.PORT || 5000;
 app.listen(port, () => {

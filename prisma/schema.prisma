@@ -9,24 +9,34 @@ datasource db {
     referentialIntegrity = "prisma"
 }
 
-enum Localidad {
-    MarDelPlata
-    Chapadmalal
-    Batan
+model Localidad {
+    id        Int        @id @default(autoincrement())
+    nombre    String
+    latitud   Float
+    longitud  Float
+    comercios Comercio[]
+}
+
+model CategoriaComercio {
+    id          Int        @id @default(autoincrement())
+    nombre      String
+    descripcion String?
+    comercios   Comercio[]
 }
 
 model Comercio {
-    id         Int       @id @default(autoincrement())
-    nombre     String
-    categorias Json // es un string porque es un array de string serializado como string. Para consultar hacer JSON.parse() 
-    direccion  String
-    localidad  Localidad
-    latitud    Float
-    longitud   Float
-    horario    String // este despues vuela, es para que no se rompa todo al migrar.
-    horarios   Horario[]
-    telefono   String
-    imagenURL  String?   @db.Text
+    id          Int                 @id @default(autoincrement())
+    nombre      String
+    categorias  CategoriaComercio[]
+    direccion   String
+    localidad   Localidad?          @relation(fields: [localidadId], references: [id])
+    localidadId Int?
+    latitud     Float
+    longitud    Float
+    horario     String // este despues vuela, es para que no se rompa todo al migrar.
+    horarios    Horario[]
+    telefono    String
+    imagenURL   String?             @db.Text
 
     // Redes
     facebookURL  String?
