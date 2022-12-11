@@ -1,0 +1,995 @@
+{
+	"openapi": "3.0.2",
+	"info": {
+		"title": "AppTacc API",
+		"version": "1.0"
+	},
+	"servers": [{ "url": "https://apptacc-api.onrender.com" }],
+	"components": {
+		"schemas": {
+			"Comercio": {
+				"type": "object",
+				"properties": {
+					"id": {
+						"type": "integer"
+					},
+					"nombre": {
+						"type": "string"
+					},
+					"direccion": {
+						"type": "string"
+					},
+					"latitud": {
+						"type": "number"
+					},
+					"longitud": {
+						"type": "number"
+					},
+					"localidad": {
+						"type": "object",
+						"nullable": true
+					},
+					"horario": {
+						"type": "string"
+					},
+					"telefono": {
+						"type": "string"
+					},
+					"imagenURL": {
+						"type": "string",
+						"nullable": true
+					},
+					"facebookURL": {
+						"type": "string",
+						"nullable": true
+					},
+					"instagramURL": {
+						"type": "string",
+						"nullable": true
+					},
+					"URL": {
+						"type": "string",
+						"nullable": true
+					},
+					"estrellas": {
+						"type": "integer"
+					},
+					"ratingPrecios": {
+						"type": "integer"
+					},
+					"productosDiabeticos": {
+						"type": "boolean"
+					},
+					"productosVeganos": {
+						"type": "boolean"
+					},
+					"validado": {
+						"type": "boolean"
+					},
+					"productos": {
+						"type": "array",
+						"items": {
+							"type": "object"
+						}
+					},
+					"horarios": {
+						"type": "array",
+						"items": {
+							"type": "object"
+						}
+					}
+				}
+			},
+			"Producto": {
+				"type": "object",
+				"properties": {
+					"id": {
+						"type": "integer"
+					},
+					"nombre": {
+						"type": "string"
+					},
+					"descripcion": {
+						"type": "string",
+						"nullable": true
+					},
+					"precio": {
+						"type": "integer",
+						"description": "Precio en centavos"
+					},
+					"rating": {
+						"type": "integer"
+					},
+					"imagen": {
+						"type": "string",
+						"nullable": true
+					},
+					"validado": {
+						"type": "boolean"
+					},
+					"comercio": {
+						"type": "object"
+					}
+				}
+			},
+			"Horario": {
+				"type": "object",
+				"properties": {
+					"dia": {
+						"type": {
+							"$ref": "#/components/schemas/DiaSemana"
+						}
+					},
+					"apertura": {
+						"type": "integer",
+						"description": "Hora de apertura en minutos desde las 00:00"
+					},
+					"cierre": {
+						"type": "integer",
+						"description": "Hora de cierre en minutos desde las 00:00"
+					}
+				}
+			},
+			"DiaSemana": {
+				"type": "string",
+				"enum": [
+					"Lunes",
+					"Martes",
+					"Miercoles",
+					"Jueves",
+					"Viernes",
+					"Sabado",
+					"Domingo"
+				]
+			},
+			"Localidad": {
+				"type": "object",
+				"properties": {
+					"id": {
+						"type": "integer"
+					},
+					"nombre": {
+						"type": "string"
+					},
+					"latitud": {
+						"type": "number"
+					},
+					"longitud": {
+						"type": "number"
+					}
+				}
+			},
+			"FiltradoPorComercios": {
+				"type": "string",
+				"enum": [
+					"cc = Categoría de Comercio",
+					"cp = Categoría de Producto",
+					"np = Nombre de Producto",
+					"nc = Nombre de Comercio"
+				]
+			},
+			"OrdenComercios": {
+				"type": "string",
+				"enum": ["precio", "rating"]
+			},
+			"Error": {
+				"type": "object",
+				"properties": {
+					"error": {
+						"type": "string"
+					}
+				},
+				"description": "Mensaje de error"
+			}
+		},
+		"parameters": {
+			"lat": {
+				"name": "Latitud",
+				"in": "query",
+				"required": true,
+				"description": "Latitud del punto de referencia"
+			}
+		}
+	},
+	"paths": {
+		"/comercios": {
+			"get": {
+				"description": "Devuelve todos los comercios dentro de un radio",
+				"tags": ["Comercios"],
+				"parameters": [
+					{
+						"name": "lat",
+						"in": "query",
+						"required": true,
+						"type": "number",
+						"description": "Latitud del punto de referencia"
+					},
+					{
+						"name": "long",
+						"in": "query",
+						"required": true,
+						"type": "number",
+						"description": "Longitud del punto de referencia"
+					},
+					{
+						"name": "radio",
+						"in": "query",
+						"type": "integer",
+						"required": false,
+						"default": 30,
+						"description": "Radio de búsqueda en kilometros"
+					},
+					{
+						"name": "filtradoPor",
+						"in": "query",
+						"type": {
+							"$ref": "#/components/schemas/FiltradoPorComercios"
+						},
+						"required": false,
+						"description": "Filtrado de los comercios"
+					},
+					{
+						"name": "orden",
+						"in": "query",
+						"type": {
+							"$ref": "#/components/schemas/OrdenComercios"
+						},
+						"required": false,
+						"description": "Orden de los comercios"
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "OK",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "array",
+									"items": {
+										"$ref": "#/components/schemas/Comercio"
+									}
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Parámetros erróneos",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Error"
+								}
+							}
+						}
+					}
+				}
+			},
+			"post": {
+				"description": "Crea un comercio",
+				"tags": ["Comercios"],
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"required": [
+									"nombre",
+									"direccion",
+									"latitud",
+									"longitud",
+									"localidad",
+									"telefono",
+									"horario"
+								],
+								"type": "object",
+								"properties": {
+									"nombre": {
+										"type": "string"
+									},
+									"direccion": {
+										"type": "string"
+									},
+									"latitud": {
+										"type": "number"
+									},
+									"longitud": {
+										"type": "number"
+									},
+									"horario": {
+										"type": "string",
+										"description": "Campo deprecado"
+									},
+									"localidad": {
+										"type": "number",
+										"description": "ID de la localidad"
+									},
+									"telefono": {
+										"type": "string"
+									},
+									"imagenURL": {
+										"type": "string"
+									},
+									"URL": {
+										"type": "string"
+									},
+									"instagramURL": {
+										"type": "string"
+									},
+									"facebookURL": {
+										"type": "string"
+									},
+									"categorias": {
+										"type": "array",
+										"items": {
+											"type": "string"
+										},
+										"description": "IDs de las categorías"
+									},
+
+									"productosDiabeticos": {
+										"type": "boolean"
+									},
+									"productosVeganos": {
+										"type": "boolean"
+									},
+									"horarios": {
+										"type": "array",
+										"items": {
+											"type": "object",
+											"properties": {
+												"dia": {
+													"type": "string"
+												},
+												"apertura": {
+													"type": "string"
+												},
+												"cierre": {
+													"type": "string"
+												}
+											}
+										},
+										"description": "Horarios de atención del comercio"
+									}
+								}
+							}
+						}
+					}
+				},
+				"responses": {
+					"200": {
+						"description": "OK",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Comercio"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Parámetros erróneos",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Error"
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/comercios/sinvalidar": {
+			"get": {
+				"description": "Devuelve los comercios sin validar",
+				"tags": ["Comercios"],
+				"responses": {
+					"200": {
+						"description": "OK",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "array",
+									"items": {
+										"$ref": "#/components/schemas/Comercio"
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/comercios/:id": {
+			"get": {
+				"description": "Devuelve un comercio",
+				"tags": ["Comercios"],
+				"parameters": [
+					{
+						"name": "id",
+						"in": "path",
+						"required": true,
+						"description": "ID del comercio",
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "OK",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Comercio"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Comercio no encontrado",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Error"
+								}
+							}
+						}
+					}
+				}
+			},
+			"patch": {
+				"description": "Actualiza un comercio",
+				"tags": ["Comercios"],
+				"parameters": [
+					{
+						"name": "id",
+						"in": "path",
+						"required": true,
+						"description": "ID del comercio",
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/Comercio"
+							}
+						}
+					}
+				},
+				"responses": {
+					"200": {
+						"description": "OK",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Comercio"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Parámetros erróneos",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Error"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Comercio no encontrado",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Error"
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/comercios/:id/horarios": {
+			"get": {
+				"description": "Devuelve los horarios de un comercio",
+				"tags": ["Horarios"],
+				"parameters": [
+					{
+						"name": "id",
+						"in": "path",
+						"required": true,
+						"description": "ID del comercio",
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "OK",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "array",
+									"items": {
+										"$ref": "#/components/schemas/Horario"
+									}
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Comercio no encontrado",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Error"
+								}
+							}
+						}
+					}
+				}
+			},
+			"post": {
+				"description": "Añade un horario a un comercio",
+				"tags": ["Horarios"],
+				"parameters": [
+					{
+						"name": "id",
+						"in": "path",
+						"required": true,
+						"description": "ID del comercio",
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/Horario"
+							}
+						}
+					}
+				},
+				"responses": {
+					"200": {
+						"description": "OK",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Horario"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Parámetros erróneos",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Error"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Comercio no encontrado",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Error"
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/comercios/:id/horarios/:idHorario": {
+			"delete": {
+				"description": "Elimina un horario de un comercio",
+				"tags": ["Horarios"],
+				"parameters": [
+					{
+						"name": "id",
+						"in": "path",
+						"required": true,
+						"description": "ID del comercio",
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"name": "idHorario",
+						"in": "path",
+						"required": true,
+						"description": "ID del horario",
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "OK",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Horario"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Comercio no encontrado",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Error"
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/comercios/:id/validar": {
+			"post": {
+				"description": "Valida un comercio",
+				"tags": ["Comercios"],
+				"parameters": [
+					{
+						"name": "id",
+						"in": "path",
+						"required": true,
+						"description": "ID del comercio",
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "OK",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Comercio"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Parámetros erróneos",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Error"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Comercio no encontrado",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Error"
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/comercios/:id/productos": {
+			"post": {
+				"description": "Añade un producto a un comercio",
+				"tags": ["Productos"],
+				"parameters": [
+					{
+						"name": "id",
+						"in": "path",
+						"required": true,
+						"description": "ID del comercio",
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"requestBody": {
+					"description": "Producto a añadir",
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/Producto"
+							}
+						}
+					}
+				},
+				"responses": {
+					"200": {
+						"description": "OK",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Producto"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Parámetros erróneos",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Error"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Comercio no encontrado",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Error"
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/localidades": {
+			"get": {
+				"description": "Obtiene todas las localidades",
+				"tags": ["Localidades"],
+				"responses": {
+					"200": {
+						"description": "OK",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "array",
+									"items": {
+										"$ref": "#/components/schemas/Localidad"
+									}
+								}
+							}
+						}
+					}
+				}
+			},
+			"post": {
+				"description": "Añade una localidad",
+				"tags": ["Localidades"],
+				"requestBody": {
+					"description": "Localidad a añadir",
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/Localidad"
+							}
+						}
+					}
+				},
+				"responses": {
+					"200": {
+						"description": "OK",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Localidad"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Parámetros erróneos",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Error"
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/productos/:id": {
+			"patch": {
+				"description": "Modifica un producto",
+				"tags": ["Productos"],
+				"parameters": [
+					{
+						"name": "id",
+						"in": "path",
+						"required": true,
+						"description": "ID del producto",
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"requestBody": {
+					"description": "Producto a modificar",
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/Producto"
+							}
+						}
+					}
+				},
+				"responses": {
+					"200": {
+						"description": "OK",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Producto"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Parámetros erróneos",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Error"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Producto no encontrado",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Error"
+								}
+							}
+						}
+					}
+				}
+			},
+			"delete": {
+				"description": "Elimina un producto",
+				"tags": ["Productos"],
+				"parameters": [
+					{
+						"name": "id",
+						"in": "path",
+						"required": true,
+						"description": "ID del producto",
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "OK",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Producto"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Parámetros erróneos",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Error"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Producto no encontrado",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Error"
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/productos/:id/validar": {
+			"post": {
+				"description": "Valida un producto",
+				"tags": ["Productos"],
+				"parameters": [
+					{
+						"name": "id",
+						"in": "path",
+						"required": true,
+						"description": "ID del producto",
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "OK",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Producto"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Parámetros erróneos",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Error"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Producto no encontrado",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Error"
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/productos/sinvalidar": {
+			"get": {
+				"description": "Devuelve los productos que no están validados",
+				"tags": ["Productos"],
+				"responses": {
+					"200": {
+						"description": "OK",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "array",
+									"items": {
+										"$ref": "#/components/schemas/Producto"
+									}
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Parámetros erróneos",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Error"
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
