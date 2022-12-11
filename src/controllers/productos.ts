@@ -1,21 +1,8 @@
 import { Router } from "express";
-import joi from "joi";
-import { getEnumValues } from "../util";
-import { CategoriaProducto, PrismaClient } from "@prisma/client";
 import { PrismaClientValidationError } from "@prisma/client/runtime";
+import { prisma } from "../prisma";
 
 const router = Router();
-
-const prisma = new PrismaClient();
-
-const productoSchema = joi.object({
-	nombre: joi.string().required(),
-	descripcion: joi.string().required(),
-	precio: joi.number().required(),
-	categoria: joi.valid(...getEnumValues(CategoriaProducto)).required(),
-	rating: joi.number(),
-	imagen: joi.string()
-});
 
 router.post("/:id/validar", async (req, res) => {
 	const id = Number(req.params.id);

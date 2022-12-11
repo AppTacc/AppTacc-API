@@ -4,9 +4,8 @@ generator client {
 }
 
 datasource db {
-    provider             = "mysql"
+    provider             = "postgresql"
     url                  = env("DATABASE_URL")
-    shadowDatabaseUrl    = env("SHADOW_DATABASE_URL")
     referentialIntegrity = "prisma"
 }
 
@@ -19,26 +18,26 @@ enum Localidad {
 model Comercio {
     id         Int       @id @default(autoincrement())
     nombre     String
-    categorias String // es un string porque es un array de string serializado como string. Para consultar hacer JSON.parse() 
-    // la ubicacion no es una entidad aparte porque no hace falta
+    categorias Json // es un string porque es un array de string serializado como string. Para consultar hacer JSON.parse() 
     direccion  String
-    localidad  Localidad // Cómo definimos las localidades
+    localidad  Localidad
     latitud    Float
     longitud   Float
-    horario    String
+    horario    String // este despues vuela, es para que no se rompa todo al migrar.
+    horarios   Horario[]
     telefono   String
-    imagenURL  String    @db.Text
+    imagenURL  String?   @db.Text
 
     // Redes
-    facebookURL  String
-    instagramURL String
-    URL          String
+    facebookURL  String?
+    instagramURL String?
+    URL          String?
 
     productos           Producto[]
-    estrellas           Int
-    ratingPrecios       Int
-    productosDiabeticos Boolean
-    productosVeganos    Boolean
+    estrellas           Int        @default(0)
+    ratingPrecios       Int        @default(0)
+    productosDiabeticos Boolean    @default(false)
+    productosVeganos    Boolean    @default(false)
     validado            Boolean    @default(false)
 }
 
@@ -55,12 +54,12 @@ enum CategoriaProducto {
 model Producto {
     id          Int               @id @default(autoincrement())
     nombre      String
-    descripcion String
+    descripcion String?
     categoria   CategoriaProducto
     precio      Int // en centavos
-    rating      Int
-    imagen      String
-    validado    Boolean @default(false)
+    rating      Int               @default(0)
+    imagen      String?
+    validado    Boolean           @default(false)
 
     comercioId Int
     comercio   Comercio @relation(fields: [comercioId], references: [id])
@@ -76,13 +75,11 @@ enum DiaSemana {
     Domingo
 }
 
-// Este modelo se va a usar mas adelante, ahora se unsa un atributo string.
-//model Horario {
-//    id              Int       @id @default(autoincrement())
-//    horarioApertura Int
-//    horarioCierre   Int
-//    diaSemana       DiaSemana
-//    abre            Boolean
-//    comercioId      Int
-//    comercio        Comercio  @relation(fields: [comercioId], references: [id])
-//}
+model Horario {
+    id         Int       @id @default(autoincrement())
+    apertura   Int // en minutos desde las 00:00
+    cierre     Int // en minutos desde las 00:00
+    dia        DiaSemana
+    comercioId Int
+    comercio   Comercio  @relation(fields: [comercioId], references: [id])
+}

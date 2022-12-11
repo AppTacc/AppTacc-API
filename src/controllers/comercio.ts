@@ -1,205 +1,123 @@
-import { Router } from "express";
-import joi from "joi";
-import {
-	PrismaClient,
-	Localidad,
-	Comercio,
-	CategoriaProducto
-} from "@prisma/client";
-import { getEnumValues } from "../util";
-import { CategoriaComercio } from "../types";
 import { PrismaClientValidationError } from "@prisma/client/runtime";
-
-const prisma = new PrismaClient({
-	log: process.env.NODE_ENV == "DEVELOPMENT" ? ["query"] : []
-});
-
-const comercioSchema = joi.object({
-	nombre: joi.string().required(),
-	categorias: joi
-		.array()
-		.items(joi.valid(...getEnumValues(CategoriaComercio)).required()),
-	direccion: joi.string().required(),
-	localidad: joi.valid(...getEnumValues(Localidad)).required(),
-	latitud: joi.number().required(),
-	longitud: joi.number().required(),
-	horario: joi.string().required(),
-	facebookURL: joi.string().allow(null, ""),
-	URL: joi.string().allow(null, ""),
-	instagramURL: joi.string().allow(null, ""),
-	productosDiabeticos: joi.bool().default(false),
-	productosVeganos: joi.bool().default(false),
-	ratingPrecios: joi.number(),
-	estrellas: joi.number(),
-	telefono: joi.string().required(),
-	imagenURL: joi.string().allow(null, "")
-});
-
-const productoSchema = joi.object({
-	nombre: joi.string().required(),
-	descripcion: joi.string().required(),
-	precio: joi.number().required(),
-	categoria: joi.valid(...getEnumValues(CategoriaProducto)).required(),
-	rating: joi.number().default(5),
-	imagen: joi
-		.string()
-		.default(
-			"https://res.cloudinary.com/deadalo3r/image/upload/v1668248337/ic_launcher_thbnxq.png"
-		)
-});
+import { Router } from "express";
+import { fromZodError } from "zod-validation-error";
+import { prisma } from "../prisma";
+import { CategoriaComercio } from "../types";
+import productoSchema from "../schemas/producto";
+import horarioSchema from "../schemas/horario";
 
 const router = Router();
 
-router.post("/", async (req, res) => {
-	const body = comercioSchema.validate(req.body);
-	if (body.error) {
-		res.status(400).json({ error: body.error });
-	} else {
-		const comercio = await prisma.comercio.create({
-			data: {
-				...body.value,
-				categorias: JSON.stringify(body.value.categorias)
-			}
-		});
-		res.status(201).json(comercio);
-	}
-});
+router.get("/:id", async (req, res) => {
+	const id = Number(req.params.id);
 
-enum Filtro {
-	CategoriaProducto = "cp",
-	CategoriaComercio = "cc",
-	NombreProducto = "np",
-	NombreComercio = "nc"
-}
-
-enum Orden {
-	Precio = "precio",
-	Rating = "rating"
-}
-
-router.get("/", async (req, res) => {
-	const radKm = Number(req.query.radio) || 30;
-	const lat = Number(req.query.lat);
-	const long = Number(req.query.long);
-	if (isNaN(lat) || isNaN(long))
-		return res.status(400).json({ error: "Latitud o longitud invalidos." });
-
-	const comerciosCercanos = await prisma.$queryRaw<Comercio[]>`
-        SELECT *, 
-( 6371 * 
-    ACOS( 
-        COS( RADIANS( latitud ) ) * 
-        COS( RADIANS( ${lat} ) ) * 
-        COS( RADIANS( ${long} ) - 
-        RADIANS( longitud ) ) + 
-        SIN( RADIANS( latitud ) ) * 
-        SIN( RADIANS( ${lat}) ) 
-    ) 
-) 
-AS distance FROM Comercio HAVING distance <= ${radKm} AND validado = true ORDER BY distance ASC
-    `;
-
-	let comercios: Comercio[] = [];
-
-	let { filtradoPor, ordenar, filtro } = req.query;
-	filtro = decodeURI(filtro as string);
-
-	if (filtradoPor === undefined) {
-		comercios = [...comerciosCercanos];
-	} else if (
-		filtradoPor === Filtro.CategoriaProducto &&
-		Object.values(CategoriaProducto).includes(filtro as CategoriaProducto)
-	) {
-		{
-			// TODO: Checkear
-			for (const comercio of comerciosCercanos) {
-				const cantProd = await prisma.producto.aggregate({
-					_count: {
-						id: true
-					},
-					where: {
-						comercioId: comercio.id,
-						categoria: filtro as CategoriaProducto
-					}
-				});
-				if (cantProd._count.id > 0) {
-					// Checkear
-					comercios.push(comercio);
-				}
-			}
-		}
-	} else if (filtradoPor === Filtro.CategoriaComercio) {
-		if (
-			!Object.values(CategoriaComercio).includes(
-				filtro as CategoriaComercio
-			)
-		) {
-			return res.status(400).json({
-				error: "Categoria de comercio invalida."
-			});
-		}
-		for (const comercio of comerciosCercanos) {
-			const categorias: string[] = JSON.parse(comercio.categorias);
-			if (categorias.includes(filtro as string)) {
-				comercios.push(comercio);
-			}
-		}
-	} else if (filtradoPor === Filtro.NombreProducto) {
-		for (const comercio of comerciosCercanos) {
-			const cantProd = await prisma.producto.aggregate({
-				_count: {
-					id: true
-				},
-				where: {
-					comercioId: comercio.id,
-					nombre: filtro as string
-				}
-			});
-			if (cantProd._count.id > 0) {
-				comercios.push(comercio);
-			}
-		}
-	} else if (filtradoPor === Filtro.NombreComercio) {
-		for (const comercio of comerciosCercanos) {
-			if (
-				comercio.nombre
-					.toLowerCase()
-					.includes(filtro.toLowerCase() as string)
-			) {
-				comercios.push(comercio);
-			}
-		}
-	} else {
-		return res.status(400).json({ error: "Filtro invalido." });
+	if (isNaN(id)) {
+		return res.status(400).json({ error: "id invalido" });
 	}
 
-	if (ordenar === Orden.Precio) {
-		comercios.sort((a, b) => {
-			return a.ratingPrecios - b.ratingPrecios;
-		});
-	} else if (ordenar === Orden.Rating) {
-		comercios.sort((a, b) => {
-			return a.estrellas - b.estrellas;
-		});
-	}
+	const productos = req.query.productos === "true";
+	// const categorias = Boolean(req.query.categorias as string);
+	const horarios = req.query.horarios === "true";
 
-	comercios.forEach(comercio => {
-		comercio.categorias = JSON.parse(comercio.categorias);
-		comercio.productosDiabeticos = !!comercio.productosDiabeticos;
-		comercio.productosVeganos = !!comercio.productosVeganos;
-	});
-
-	res.status(200).json(comercios);
-});
-
-router.get("/sinvalidar", async (req, res) => {
-	const comercios = await prisma.comercio.findMany({
+	const comercio = await prisma.comercio.findUnique({
 		where: {
-			validado: false
+			id
+		},
+		include: {
+			productos,
+			// categorias,
+			horarios
 		}
 	});
 
-	res.status(200).json(comercios);
+	if (!comercio) {
+		return res.status(404).json({ error: "Comercio no encontrado" });
+	}
+
+	comercio.categorias = JSON.parse(comercio.categorias as string);
+
+	res.status(200).json(comercio);
+});
+
+router.post("/:id/horarios", async (req, res) => {
+	const idComercio = Number(req.params.id as string);
+
+	if (isNaN(idComercio))
+		return res.status(400).json({ error: "id invalido" });
+
+	const body = horarioSchema.safeParse(req.body);
+
+	if (!body.success) {
+		const error = fromZodError(body.error);
+		return res.status(400).json({ error: error.message });
+	}
+
+	const horario = body.data;
+
+	const comercio = await prisma.comercio.findUnique({
+		where: {
+			id: idComercio
+		},
+		include: {
+			horarios: true
+		}
+	});
+
+	if (!comercio)
+		return res.status(404).json({ error: "comercio no encontrado" });
+
+	const superponeAlguno = comercio.horarios.some(h => {
+		return (
+			h.dia == horario.dia &&
+			h.apertura < horario.cierre &&
+			h.cierre > horario.apertura
+		);
+	});
+
+	if (superponeAlguno)
+		return res
+			.status(400)
+			.json({ error: "horario se superpone con otro horario" });
+
+	const horarioCreado = await prisma.horario.create({
+		data: {
+			...horario,
+			comercio: {
+				connect: {
+					id: idComercio
+				}
+			}
+		}
+	});
+
+	res.status(201).json(horarioCreado);
+});
+
+router.delete("/:id/horarios/:idHorario", async (req, res) => {
+	const idComercio = Number(req.params.id as string);
+	const idHorario = Number(req.params.idHorario as string);
+	if (isNaN(idComercio) || isNaN(idHorario))
+		return res.status(400).json({ error: "id invalido" });
+
+	const horario = await prisma.horario.findUnique({
+		where: {
+			id: idHorario
+		},
+		include: {
+			comercio: true
+		}
+	});
+
+	if (!horario)
+		return res.status(404).json({ error: "horario no encontrado" });
+
+	const horarioEliminado = await prisma.horario.delete({
+		where: {
+			id: idHorario
+		}
+	});
+
+	res.status(200).json(horarioEliminado);
 });
 
 router.post("/:id/validar", async (req, res) => {
@@ -233,15 +151,18 @@ router.post("/:id/productos", async (req, res) => {
 		return res.status(404).json({ error: "Comercio no encontrado" });
 	}
 
-	const body = productoSchema.validate(req.body);
+	const body = productoSchema.safeParse(req.body);
 
-	if (body.error) {
-		res.status(400).json({ error: body.error.message });
+	if (!body.success) {
+		const error = fromZodError(body.error);
+		return res.status(400).json({ error: error.message });
 	}
+
+	const data = body.data;
 
 	const producto = await prisma.producto.create({
 		data: {
-			...body.value,
+			...data,
 			comercio: {
 				connect: {
 					id: id
@@ -251,31 +172,6 @@ router.post("/:id/productos", async (req, res) => {
 	});
 
 	res.status(201).json(producto);
-});
-
-router.get("/:id", async (req, res) => {
-	const id = Number(req.params.id);
-
-	if (isNaN(id)) {
-		return res.status(400).json({ error: "id invalido" });
-	}
-
-	const comercio = await prisma.comercio.findUnique({
-		where: {
-			id
-		},
-		include: {
-			productos: true
-		}
-	});
-
-	if (!comercio) {
-		return res.status(404).json({ error: "Comercio no encontrado" });
-	}
-
-	comercio.categorias = JSON.parse(comercio.categorias);
-
-	res.status(200).json(comercio);
 });
 
 router.patch("/:id", async (req, res) => {
@@ -301,7 +197,7 @@ router.patch("/:id", async (req, res) => {
 		if (!Object.values(CategoriaComercio).includes(nuevaCategoria)) {
 			return res.status(400).json({ error: "Categoria invalida" });
 		}
-		const categorias = JSON.parse(comercio.categorias);
+		const categorias = JSON.parse(comercio.categorias as string);
 		categorias.push(nuevaCategoria);
 		req.body.categorias = JSON.stringify(categorias);
 	}
