@@ -12,14 +12,30 @@ import {
 	validateComercioPOST
 } from "../schemas/comercios.schema";
 import { prisma } from "../lib/prisma";
-import { CategoriaProducto, Comercio } from "@prisma/client";
+import {
+	CategoriaComercio,
+	CategoriaProducto,
+	Comercio,
+	Horario,
+	Prisma,
+	Producto
+} from "@prisma/client";
+import { logger } from "../utils/logging";
+import {
+	getBadRequestError,
+	getInternalError,
+	getNotFoundError
+} from "../utils/errors";
+import { newRecoveryStack } from "../utils/recoveryStack";
 
 export const getComercios = async (req: Request, res: Response) => {
 	const {
 		query: { radio, lat, long, ordenar, filtro, filtradoPor }
 	} = comerciosGET.parse(req);
 
-	const comerciosCercanos = await prisma.$queryRaw<Comercio[]>`
+	let comerciosCercanos: Comercio[];
+	try {
+		comerciosCercanos = await prisma.$queryRaw<Comercio[]>`
         SELECT *, 
 ( 6371 * 
     ACOS( 
@@ -33,6 +49,13 @@ export const getComercios = async (req: Request, res: Response) => {
 ) 
 AS distance FROM Comercio HAVING distance <= ${radio} AND validado = true ORDER BY distance ASC;
     `;
+	} catch (err: unknown) {
+		logger.error(err);
+		const error = getInternalError(
+			"hubo un error recuperando los comercios"
+		);
+		return res.status(error.status).json({ error });
+	}
 
 	let comercios: Comercio[] = [];
 
@@ -41,41 +64,67 @@ AS distance FROM Comercio HAVING distance <= ${radio} AND validado = true ORDER 
 	} else if (filtradoPor === "cp") {
 		{
 			for (const comercio of comerciosCercanos) {
-				const cantProd = await prisma.producto.aggregate({
-					_count: {
-						id: true
-					},
-					where: {
-						comercioId: comercio.id,
-						categoria: filtro as CategoriaProducto
-					}
-				});
+				let cantProd: { _count: { id: number } };
+				try {
+					cantProd = await prisma.producto.aggregate({
+						_count: {
+							id: true
+						},
+						where: {
+							comercioId: comercio.id,
+							categoria: filtro as CategoriaProducto
+						}
+					});
+				} catch (err: unknown) {
+					logger.error(err);
+					const error = getInternalError(
+						"hubo un error filtrando los comercios"
+					);
+					return res.status(error.status).json({ error });
+				}
 				if (cantProd._count.id > 0) {
 					comercios.push(comercio);
 				}
 			}
 		}
 	} else if (filtradoPor === "cc") {
-		comercios = await prisma.comercio.findMany({
-			where: {
-				categorias: {
-					some: {
-						id: Number(filtro)
+		try {
+			comercios = await prisma.comercio.findMany({
+				where: {
+					categorias: {
+						some: {
+							id: Number(filtro)
+						}
 					}
 				}
-			}
-		});
+			});
+		} catch (err: unknown) {
+			logger.error(err);
+			const error = getInternalError(
+				"hubo un error filtrando los comercios"
+			);
+			return res.status(error.status).json({ error });
+		}
 	} else if (filtradoPor === "np") {
 		for (const comercio of comerciosCercanos) {
-			const cantProd = await prisma.producto.aggregate({
-				_count: {
-					id: true
-				},
-				where: {
-					comercioId: comercio.id,
-					nombre: filtro as string
-				}
-			});
+			let cantProd: { _count: { id: number } };
+			try {
+				cantProd = await prisma.producto.aggregate({
+					_count: {
+						id: true
+					},
+					where: {
+						comercioId: comercio.id,
+						nombre: filtro as string
+					}
+				});
+			} catch (err: unknown) {
+				logger.error(err);
+				const error = getInternalError(
+					"hubo un error filtrando los comercios"
+				);
+				return res.status(error.status).json({ error });
+			}
 			if (cantProd._count.id > 0) {
 				comercios.push(comercio);
 			}
@@ -90,8 +139,6 @@ AS distance FROM Comercio HAVING distance <= ${radio} AND validado = true ORDER 
 				comercios.push(comercio);
 			}
 		}
-	} else {
-		return res.status(400).json({ error: "Filtro invalido." });
 	}
 
 	if (ordenar === "precio") {
@@ -113,11 +160,20 @@ AS distance FROM Comercio HAVING distance <= ${radio} AND validado = true ORDER 
 };
 
 export const getComerciosSinValidar = async (req: Request, res: Response) => {
-	const comercios = await prisma.comercio.findMany({
-		where: {
-			validado: false
-		}
-	});
+	let comercios: Comercio[];
+	try {
+		comercios = await prisma.comercio.findMany({
+			where: {
+				validado: false
+			}
+		});
+	} catch (err: unknown) {
+		logger.error(err);
+		const error = getInternalError(
+			"hubo un error recuperando los comercios"
+		);
+		return res.status(error.status).json({ error });
+	}
 
 	res.status(200).json(comercios);
 };
@@ -128,19 +184,35 @@ export const getComercio = async (req: Request, res: Response) => {
 		query: { categorias, horarios, productos }
 	} = comercioGET.parse(req);
 
-	const comercio = await prisma.comercio.findUnique({
-		where: {
-			id
-		},
-		include: {
-			productos,
-			categorias,
-			horarios
-		}
-	});
+	let comercio:
+		| (Comercio & {
+				productos: Producto[];
+				categorias?: CategoriaComercio[];
+				horarios?: Horario[];
+		  })
+		| null;
+	try {
+		comercio = await prisma.comercio.findUnique({
+			where: {
+				id
+			},
+			include: {
+				productos,
+				categorias,
+				horarios
+			}
+		});
+	} catch (err: unknown) {
+		logger.error(err);
+		const error = getInternalError(
+			"hubo un error recuperando los comercios"
+		);
+		return res.status(error.status).json({ error });
+	}
 
 	if (!comercio) {
-		return res.status(404).json({ error: "Comercio no encontrado" });
+		const error = getNotFoundError("comercio no encontrado");
+		return res.status(error.status).json({ error });
 	}
 
 	res.status(200).json(comercio);
@@ -151,11 +223,20 @@ export const getHorarios = async (req: Request, res: Response) => {
 		params: { id }
 	} = horariosGET.parse(req);
 
-	const horarios = await prisma.horario.findMany({
-		where: {
-			comercioId: id
-		}
-	});
+	let horarios: Horario[];
+	try {
+		horarios = await prisma.horario.findMany({
+			where: {
+				comercioId: id
+			}
+		});
+	} catch (err: unknown) {
+		logger.error(err);
+		const error = getInternalError(
+			"hubo un error recuperando los horarios"
+		);
+		return res.status(error.status).json({ error });
+	}
 
 	res.status(200).json(horarios);
 };
@@ -166,17 +247,26 @@ export const createHorario = async (req: Request, res: Response) => {
 		body: horario
 	} = horariosPOST.parse(req);
 
-	const comercio = await prisma.comercio.findUnique({
-		where: {
-			id
-		},
-		include: {
-			horarios: true
-		}
-	});
+	let comercio: (Comercio & { horarios: Horario[] }) | null;
+	try {
+		comercio = await prisma.comercio.findUnique({
+			where: {
+				id
+			},
+			include: {
+				horarios: true
+			}
+		});
+	} catch (err: unknown) {
+		logger.error(err);
+		const error = getInternalError("hubo un error recuperando el comercio");
+		return res.status(error.status).json({ error });
+	}
 
-	if (!comercio)
-		return res.status(404).json({ error: "comercio no encontrado" });
+	if (!comercio) {
+		const error = getNotFoundError("comercio no encontrado");
+		return res.status(error.status).json({ error });
+	}
 
 	const superponeAlguno = comercio.horarios.some(h => {
 		return (
@@ -186,21 +276,30 @@ export const createHorario = async (req: Request, res: Response) => {
 		);
 	});
 
-	if (superponeAlguno)
-		return res
-			.status(400)
-			.json({ error: "horario se superpone con otro horario" });
+	if (superponeAlguno) {
+		const error = getBadRequestError(
+			"el horario se superpone con otro horario"
+		);
+		return res.status(error.status).json({ error });
+	}
 
-	const horarioCreado = await prisma.horario.create({
-		data: {
-			...horario,
-			comercio: {
-				connect: {
-					id
+	let horarioCreado: Horario;
+	try {
+		horarioCreado = await prisma.horario.create({
+			data: {
+				...horario,
+				comercio: {
+					connect: {
+						id
+					}
 				}
 			}
-		}
-	});
+		});
+	} catch (err: unknown) {
+		logger.error(err);
+		const error = getInternalError("hubo un error creando el horario");
+		return res.status(error.status).json({ error });
+	}
 
 	res.status(201).json(horarioCreado);
 };
@@ -210,12 +309,19 @@ export const deleteHorario = async (req: Request, res: Response) => {
 		params: { id, idHorario }
 	} = horariosDELETE.parse(req);
 
-	const horarioEliminado = await prisma.horario.deleteMany({
-		where: {
-			id: idHorario,
-			comercioId: id
-		}
-	});
+	let horarioEliminado: Prisma.BatchPayload;
+	try {
+		horarioEliminado = await prisma.horario.deleteMany({
+			where: {
+				id: idHorario,
+				comercioId: id
+			}
+		});
+	} catch (err: unknown) {
+		logger.error(err);
+		const error = getInternalError("hubo un error eliminando el horario");
+		return res.status(error.status).json({ error });
+	}
 
 	res.status(200).json(horarioEliminado);
 };
@@ -226,26 +332,41 @@ export const createProducto = async (req: Request, res: Response) => {
 		body
 	} = productosPOST.parse(req);
 
-	const comercio = await prisma.comercio.findUnique({
-		where: {
-			id: id
-		}
-	});
-
-	if (!comercio) {
-		return res.status(404).json({ error: "Comercio no encontrado" });
+	let comercio: Comercio | null;
+	try {
+		comercio = await prisma.comercio.findUnique({
+			where: {
+				id: id
+			}
+		});
+	} catch (err: unknown) {
+		logger.error(err);
+		const error = getInternalError("hubo un error recuperando el comercio");
+		return res.status(error.status).json({ error });
 	}
 
-	const producto = await prisma.producto.create({
-		data: {
-			...body,
-			comercio: {
-				connect: {
-					id: id
+	if (!comercio) {
+		const error = getNotFoundError("comercio no encontrado");
+		return res.status(error.status).json({ error });
+	}
+
+	let producto: Producto;
+	try {
+		producto = await prisma.producto.create({
+			data: {
+				...body,
+				comercio: {
+					connect: {
+						id: id
+					}
 				}
 			}
-		}
-	});
+		});
+	} catch (err: unknown) {
+		logger.error(err);
+		const error = getInternalError("hubo un error creando el producto");
+		return res.status(error.status).json({ error });
+	}
 
 	res.status(201).json(producto);
 };
@@ -255,14 +376,22 @@ export const validateComercio = async (req: Request, res: Response) => {
 		params: { id }
 	} = validateComercioPOST.parse(req);
 
-	const comercio = await prisma.comercio.update({
-		where: {
-			id
-		},
-		data: {
-			validado: true
-		}
-	});
+	let comercio: Comercio;
+	try {
+		comercio = await prisma.comercio.update({
+			where: {
+				id
+			},
+			data: {
+				validado: true
+			}
+		});
+	} catch (err: unknown) {
+		logger.error(err);
+		const error = getInternalError("hubo un error verificando el comercio");
+		return res.status(error.status).json({ error });
+	}
+
 	res.status(200).json(comercio);
 };
 
@@ -272,34 +401,51 @@ export const updateComercio = async (req: Request, res: Response) => {
 		body
 	} = comercioPATCH.parse(req);
 
-	const comercio = await prisma.comercio.findUnique({
-		where: {
-			id
-		}
-	});
-
-	if (!comercio) {
-		return res.status(404).json({ error: "Comercio no encontrado" });
+	let comercio: Comercio | null;
+	try {
+		comercio = await prisma.comercio.findUnique({
+			where: {
+				id
+			}
+		});
+	} catch (err: unknown) {
+		logger.error(err);
+		const error = getInternalError("hubo un error recuperando el comercio");
+		return res.status(error.status).json({ error });
 	}
 
-	const comercioActualizado = await prisma.comercio.update({
-		where: {
-			id
-		},
-		data: {
-			...body,
-			categorias: {
-				connect: body.categorias
-					? body.categorias.map(id => ({ id }))
-					: []
+	if (!comercio) {
+		const error = getNotFoundError("comercio no encontrado");
+		return res.status(error.status).json({ error });
+	}
+
+	let comercioActualizado: Comercio;
+	try {
+		comercioActualizado = await prisma.comercio.update({
+			where: {
+				id
 			},
-			localidad: {
-				connect: {
-					id: body.localidad || undefined
+			data: {
+				...body,
+				categorias: {
+					connect: body.categorias
+						? body.categorias.map(id => ({ id }))
+						: []
+				},
+				localidad: {
+					connect: {
+						id: body.localidad || undefined
+					}
 				}
 			}
-		}
-	});
+		});
+	} catch (err: unknown) {
+		logger.error(err);
+		const error = getInternalError(
+			"hubo un error actualizando el comercio"
+		);
+		return res.status(error.status).json({ error });
+	}
 
 	return res.status(200).json(comercioActualizado);
 };
@@ -309,11 +455,18 @@ export const deleteComercio = async (req: Request, res: Response) => {
 		params: { id }
 	} = comercioDELETE.parse(req);
 
-	const comercioEliminado = await prisma.comercio.delete({
-		where: {
-			id
-		}
-	});
+	let comercioEliminado: Comercio;
+	try {
+		comercioEliminado = await prisma.comercio.delete({
+			where: {
+				id
+			}
+		});
+	} catch (err: unknown) {
+		logger.error(err);
+		const error = getInternalError("hubo un error eliminando el comercio");
+		return res.status(error.status).json({ error });
+	}
 
 	res.status(202).json(comercioEliminado);
 };
@@ -322,45 +475,80 @@ export const createComercio = async (req: Request, res: Response) => {
 	const { body } = comerciosPOST.parse(req);
 
 	const { horarios, categorias, localidad, ...rest } = body;
-	const comercio = await prisma.comercio.create({
-		data: {
-			...rest,
-			localidad: {
-				connect: {
-					id: localidad
-				}
-			}
-		}
-	});
 
-	if (categorias) {
-		await prisma.comercio.update({
-			where: {
-				id: comercio.id
-			},
+	const recoveryStack = newRecoveryStack();
+
+	let comercio: Comercio;
+	try {
+		comercio = await prisma.comercio.create({
 			data: {
-				categorias: {
-					connect: categorias.map(categoria => ({
-						id: categoria
-					}))
+				...rest,
+				localidad: {
+					connect: {
+						id: localidad
+					}
 				}
 			}
 		});
+		recoveryStack.addFn(() =>
+			prisma.comercio.delete({
+				where: {
+					id: comercio.id
+				}
+			})
+		);
+	} catch (err: unknown) {
+		logger.error(err);
+		const error = getInternalError("hubo un error creando el comercio");
+		return res.status(error.status).json({ error });
 	}
 
-	if (horarios) {
-		horarios.forEach(async horario => {
-			await prisma.horario.create({
+	if (categorias) {
+		try {
+			await prisma.comercio.update({
+				where: {
+					id: comercio.id
+				},
 				data: {
-					...horario,
-					comercio: {
-						connect: {
-							id: comercio.id
-						}
+					categorias: {
+						connect: categorias.map(categoria => ({
+							id: categoria
+						}))
 					}
 				}
 			});
-		});
+		} catch (err: unknown) {
+			recoveryStack.runFns();
+			logger.error(err);
+			const error = getInternalError(
+				"hubo un error asignando las categorias del comercio"
+			);
+			return res.status(error.status).json({ error });
+		}
+	}
+
+	if (horarios) {
+		try {
+			horarios.forEach(async horario => {
+				await prisma.horario.create({
+					data: {
+						...horario,
+						comercio: {
+							connect: {
+								id: comercio.id
+							}
+						}
+					}
+				});
+			});
+		} catch (err: unknown) {
+			recoveryStack.runFns();
+			logger.error(err);
+			const error = getInternalError(
+				"hubo un error creando los horarios del comercio"
+			);
+			return res.status(error.status).json({ error });
+		}
 	}
 
 	res.status(201).json(comercio);

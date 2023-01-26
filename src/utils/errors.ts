@@ -21,3 +21,13 @@ export const getNotFoundError = (message: string) => {
 	};
 	return error;
 };
+
+export const getBadRequestError = (message: string) => {
+	const error: ApiError = {
+		code: "Bad Request",
+		message,
+		status: 400
+	};
+
+	return error;
+};

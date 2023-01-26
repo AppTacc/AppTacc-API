@@ -1,3 +1,4 @@
+import { Comercio, Producto } from "@prisma/client";
 import { Request, Response } from "express";
 import { prisma } from "../lib/prisma";
 import {
@@ -5,37 +6,55 @@ import {
 	productoPATCH,
 	validateProductoPOST
 } from "../schemas/productos.schema";
+import { getInternalError, getNotFoundError } from "../utils/errors";
+import { logger } from "../utils/logging";
 
 export const validateProducto = async (req: Request, res: Response) => {
 	const {
 		params: { id }
 	} = validateProductoPOST.parse(req);
 
-	const producto = await prisma.producto.update({
-		where: {
-			id
-		},
-		data: {
-			validado: true
-		}
-	});
+	let producto: Producto;
+	try {
+		producto = await prisma.producto.update({
+			where: {
+				id
+			},
+			data: {
+				validado: true
+			}
+		});
+	} catch (err: unknown) {
+		logger.error(err);
+		const error = getInternalError("hubo un error validando el producto");
+		return res.status(error.status).json({ error });
+	}
 
 	res.status(200).json(producto);
 };
 
 export const getProductosSinValidar = async (req: Request, res: Response) => {
-	const comercios = await prisma.comercio.findMany({
-		where: {
-			validado: true
-		},
-		include: {
-			productos: {
-				where: {
-					validado: false
+	let comercios: (Comercio & { productos: Producto[] })[];
+	try {
+		comercios = await prisma.comercio.findMany({
+			where: {
+				validado: true
+			},
+			include: {
+				productos: {
+					where: {
+						validado: false
+					}
 				}
 			}
-		}
-	});
+		});
+	} catch (err: unknown) {
+		logger.error(err);
+		const error = getInternalError(
+			"hubo un error recuperando los productos sin validar"
+		);
+		return res.status(error.status).json({ error });
+	}
 
 	res.status(200).json(
 		comercios.filter(
@@ -49,11 +68,18 @@ export const deleteProducto = async (req: Request, res: Response) => {
 		params: { id }
 	} = productoDELETE.parse(req);
 
-	const productoEliminado = await prisma.producto.delete({
-		where: {
-			id
-		}
-	});
+	let productoEliminado: Producto;
+	try {
+		productoEliminado = await prisma.producto.delete({
+			where: {
+				id
+			}
+		});
+	} catch (err: unknown) {
+		logger.error(err);
+		const error = getInternalError("hubo un error eliminando el producto");
+		return res.status(error.status).json({ error });
+	}
 
 	res.status(202).json(productoEliminado);
 };
@@ -64,22 +90,40 @@ export const updateProducto = async (req: Request, res: Response) => {
 		body
 	} = productoPATCH.parse(req);
 
-	const producto = await prisma.producto.findUnique({
-		where: {
-			id
-		}
-	});
+	let producto: Producto | null;
 
-	if (!producto) {
-		return res.status(404).json({ error: "Producto no encontrado" });
+	try {
+		producto = await prisma.producto.findUnique({
+			where: {
+				id
+			}
+		});
+	} catch (err: unknown) {
+		logger.error(err);
+		const error = getInternalError("hubo un error recuperando el producto");
+		return res.status(error.status).json({ error });
 	}
 
-	const productoNew = await prisma.producto.update({
-		where: {
-			id
-		},
-		data: body
-	});
+	if (!producto) {
+		const error = getNotFoundError("producto no encontrado");
+		return res.status(error.status).json({ error });
+	}
+
+	let productoNew: Producto;
+	try {
+		productoNew = await prisma.producto.update({
+			where: {
+				id
+			},
+			data: body
+		});
+	} catch (err: unknown) {
+		logger.error(err);
+		const error = getInternalError(
+			"hubo un error actualizando el producto"
+		);
+		return res.status(error.status).json({ error });
+	}
 
 	return res.status(200).json(productoNew);
 };
