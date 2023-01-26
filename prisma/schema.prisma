@@ -15,6 +15,9 @@ model Localidad {
     latitud   Float
     longitud  Float
     comercios Comercio[]
+
+    deletedOn DateTime?
+    createdOn DateTime @default(now())
 }
 
 model CategoriaComercio {
@@ -22,6 +25,9 @@ model CategoriaComercio {
     nombre      String
     descripcion String?
     comercios   Comercio[]
+
+    deletedOn DateTime?
+    createdOn DateTime @default(now())
 }
 
 model Comercio {
@@ -49,6 +55,9 @@ model Comercio {
     productosDiabeticos Boolean    @default(false)
     productosVeganos    Boolean    @default(false)
     validado            Boolean    @default(false)
+
+    deletedOn DateTime?
+    createdOn DateTime @default(now())
 }
 
 enum CategoriaProducto {
@@ -73,6 +82,9 @@ model Producto {
 
     comercioId Int
     comercio   Comercio @relation(fields: [comercioId], references: [id])
+
+    deletedOn DateTime?
+    createdOn DateTime @default(now())
 }
 
 enum DiaSemana {
@@ -92,4 +104,7 @@ model Horario {
     dia        DiaSemana
     comercioId Int
     comercio   Comercio  @relation(fields: [comercioId], references: [id])
+
+    deletedOn DateTime?
+    createdOn DateTime @default(now())
 }
