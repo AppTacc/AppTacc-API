@@ -2,12 +2,8 @@ import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import swaggerUi from "swagger-ui-express";
-
-import comerciosRouter from "./controllers/comercios";
-import comercioRouter from "./controllers/comercio";
-import categoriasRouter from "./controllers/categorias";
-import productosRouter from "./controllers/productos";
 import dummyRouter from "./controllers/dummy";
+import apiRoutes from "./routes";
 
 dotenv.config();
 
@@ -15,10 +11,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-app.use("/comercios", comerciosRouter);
-app.use("/comercios", comercioRouter);
-app.use("/categorias", categoriasRouter);
-app.use("/productos", productosRouter);
+app.use("", apiRoutes);
 
 app.use("/dummy", dummyRouter);
 

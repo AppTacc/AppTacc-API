@@ -1,0 +1,3 @@
+ABM de Localidades.
+ABM de Categorias de Comercio.
+Configurar DB para producción, no dev.
