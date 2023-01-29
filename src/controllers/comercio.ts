@@ -32,7 +32,8 @@ const comercioSchema = joi.object({
 	ratingPrecios: joi.number(),
 	estrellas: joi.number(),
 	telefono: joi.string().required(),
-	imagenURL: joi.string().allow(null, "")
+	imagenURL: joi.string().allow(null, ""),
+	codigoVerificacion: joi.string().allow(null, "").optional()
 });
 
 const productoSchema = joi.object({
