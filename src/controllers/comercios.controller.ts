@@ -1,5 +1,7 @@
 import { Request, Response } from "express";
 import {
+	comercioCategoriasDELETE,
+	comercioCategoriasPOST,
 	comercioDELETE,
 	comercioGET,
 	comercioPATCH,
@@ -427,11 +429,6 @@ export const updateComercio = async (req: Request, res: Response) => {
 			},
 			data: {
 				...body,
-				categorias: {
-					connect: body.categorias
-						? body.categorias.map(id => ({ id }))
-						: []
-				},
 				localidad: {
 					connect: {
 						id: body.localidad || undefined
@@ -448,6 +445,100 @@ export const updateComercio = async (req: Request, res: Response) => {
 	}
 
 	return res.status(200).json(comercioActualizado);
+};
+
+export const addCategorias = async (req: Request, res: Response) => {
+	const {
+		params: { id },
+		body
+	} = comercioCategoriasPOST.parse(req);
+
+	let comercio: Comercio | null;
+	try {
+		comercio = await prisma.comercio.findUnique({
+			where: {
+				id
+			}
+		});
+	} catch (err: unknown) {
+		logger.error(err);
+		const error = getInternalError(
+			"hubo un error agregando las categorias"
+		);
+		return res.status(error.status).json({ error });
+	}
+
+	if (!comercio) {
+		const error = getNotFoundError("comercio no encontrado");
+		return res.status(error.status).json({ error });
+	}
+
+	try {
+		await prisma.comercio.update({
+			where: {
+				id
+			},
+			data: {
+				categorias: {
+					connect: body.categorias.map(idCategoria => ({
+						id: idCategoria
+					}))
+				}
+			}
+		});
+	} catch (err: unknown) {
+		logger.error(err);
+		const error = getInternalError(
+			"hubo un error agregando las categorias"
+		);
+		return res.status(error.status).json({ error });
+	}
+
+	return res.status(200).end();
+};
+
+export const deleteCategoria = async (req: Request, res: Response) => {
+	const {
+		params: { id },
+		body
+	} = comercioCategoriasDELETE.parse(req);
+
+	let comercio: Comercio | null;
+	try {
+		comercio = await prisma.comercio.findUnique({
+			where: {
+				id
+			}
+		});
+	} catch (err: unknown) {
+		logger.error(err);
+		const error = getInternalError(
+			"hubo un error agregando las categorias"
+		);
+		return res.status(error.status).json({ error });
+	}
+
+	if (!comercio) {
+		const error = getNotFoundError("comercio no encontrado");
+		return res.status(error.status).json({ error });
+	}
+
+	try {
+		await prisma.comercio.update({
+			where: { id },
+			data: {
+				categorias: {
+					disconnect: { id: body.categoria }
+				}
+			}
+		});
+	} catch (err: unknown) {
+		logger.error(err);
+		const error = getInternalError("hubo un error eliminando la categoria");
+		return res.status(error.status).json({ error });
+	}
+
+	return res.status(200).end();
 };
 
 export const deleteComercio = async (req: Request, res: Response) => {

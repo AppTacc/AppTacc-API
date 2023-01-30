@@ -52,7 +52,6 @@ export const comercioPATCH = z.object({
 		latitud: z.number().optional(),
 		longitud: z.number().optional(),
 		localidad: z.number().optional(),
-		categorias: z.array(z.number()).optional(),
 		horario: z.string().optional(),
 		facebookURL: z.string().optional(),
 		URL: z.string().optional(),
@@ -64,6 +63,26 @@ export const comercioPATCH = z.object({
 		telefono: z.string().optional(),
 		imagenURL: z.string().optional()
 	})
+});
+
+export const comercioCategoriasPOST = z.object({
+	body: z.object({
+		categorias: z.array(z.number())
+	}),
+	params: z.object({
+		id: z.coerce.number()
+	}),
+	query: z.object({})
+});
+
+export const comercioCategoriasDELETE = z.object({
+	body: z.object({
+		categoria: z.number()
+	}),
+	params: z.object({
+		id: z.coerce.number()
+	}),
+	query: z.object({})
 });
 
 export const comercioDELETE = z.object({

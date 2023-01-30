@@ -1,8 +1,10 @@
 import { Router } from "express";
 import {
+	addCategorias,
 	createComercio,
 	createHorario,
 	createProducto,
+	deleteCategoria,
 	deleteComercio,
 	deleteHorario,
 	getComercio,
@@ -13,6 +15,8 @@ import {
 	validateComercio
 } from "../controllers/comercios.controller";
 import {
+	comercioCategoriasDELETE,
+	comercioCategoriasPOST,
 	comercioDELETE,
 	comercioGET,
 	comercioPATCH,
@@ -58,5 +62,17 @@ comerciosRoutes.patch("/:id", validate(comercioPATCH), updateComercio);
 comerciosRoutes.post("/:id/productos", validate(productosPOST), createProducto);
 
 comerciosRoutes.post("/", validate(comerciosPOST), createComercio);
+
+comerciosRoutes.post(
+	"/:id/categorias",
+	validate(comercioCategoriasPOST),
+	addCategorias
+);
+
+comerciosRoutes.delete(
+	"/:id/categorias",
+	validate(comercioCategoriasDELETE),
+	deleteCategoria
+);
 
 export default comerciosRoutes;
